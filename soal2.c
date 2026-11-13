@@ -1,128 +1,114 @@
-/*
-Nama: Rafa Zahran Ramadhan
-NIM: 13224102
-Modul: 2 - Dynamic Structures
-Soal no: 2 - Peternak Bunga Matahari
-Deskripsi: Mencari posisi bunga yang memiliki bunga
-lebih tinggi di sisi kiri dan sisi kanannya.
-*/
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct bunga {
-    int urutan, tinggi;
-    struct bunga *next, *prev;
-} Bunga;
-
-typedef struct bungatidakkena {
+struct bunga {
     int urutan;
-    struct bungatidakkena *prev, *next;
-} Hasil;
+    int tinggi;
+    struct bunga *next;
+    struct bunga *prev;
+};
 
-Bunga *awal = NULL, *akhir = NULL;
+struct pembanding {
+    int urutan;
+    int tinggi;
+    struct pembanding *next;
+    struct pembanding *prev;
+};
+
+struct bungatidakkena {
+    int urutan;
+    struct bungatidakkena *prev;
+    struct bungatidakkena *next;
+};
+
+struct bunga *awalbunga = NULL;
 void deletenode(int urutan);
-void bersihkan(Hasil *bungatidakkena);
 
-int main(void) {
-    Bunga *bunga = NULL, *pembanding = NULL;
-    Hasil *bungatidakkena = NULL, *akhirhasil = NULL;
-    int jumlahbunga = 0, Ntidakkena = 0;
-    int tinggi, pemisah;
+int main() {
+    struct bunga *bunga, *akhirbunga = NULL;
+    struct pembanding *pembanding, *akhirpembanding = NULL;
+    struct bungatidakkena *bungatidakkena = NULL, *awalhasil = NULL;
+    int jumlahbunga = 0;
+    int Ntidakkena = 0;
+    int pemisah;
 
-    /* Baca tinggi sampai akhir satu baris atau EOF. */
-    while (scanf("%d", &tinggi) == 1) {
+    /* Input dan pembentukan kedua linked list. */
+    while (1) {
         bunga = malloc(sizeof *bunga);
-        if (bunga == NULL) {
-            bersihkan(bungatidakkena);
-            return 1;
-        }
-        bunga->urutan = ++jumlahbunga;
-        bunga->tinggi = tinggi;
-        bunga->prev = akhir;
-        bunga->next = NULL;
-        if (akhir != NULL) akhir->next = bunga;
-        else awal = bunga;
-        akhir = bunga;
+        pembanding = malloc(sizeof *pembanding);
 
-        do { pemisah = getchar(); }
-        while (pemisah == ' ' || pemisah == '\t' ||
-               pemisah == '\r');
+        bunga->urutan = jumlahbunga + 1;
+        pembanding->urutan = bunga->urutan;
+        scanf("%d", &bunga->tinggi);
+        pembanding->tinggi = bunga->tinggi;
+
+        bunga->prev = akhirbunga;
+        bunga->next = NULL;
+        if (akhirbunga != NULL) akhirbunga->next = bunga;
+        else awalbunga = bunga;
+        akhirbunga = bunga;
+
+        pembanding->prev = akhirpembanding;
+        pembanding->next = NULL;
+        if (akhirpembanding != NULL) akhirpembanding->next = pembanding;
+        akhirpembanding = pembanding;
+        jumlahbunga++;
+
+        do {
+            pemisah = getchar();
+        } while (pemisah == ' ' || pemisah == '\t' || pemisah == '\r');
         if (pemisah == '\n' || pemisah == EOF) break;
         ungetc(pemisah, stdin);
     }
-bunga = awal;
-    while (bunga != NULL) {
+
+    /* Bunga maju, pembanding ditelusuri dari belakang. */
+    bunga = awalbunga;
+    for (int i = 0; i < jumlahbunga; i++) {
         int kiri = 0, kanan = 0;
-        Bunga *berikut = bunga->next;
-        pembanding = bunga->prev;
-        while (pembanding != NULL) {
+        struct bunga *berikut = bunga->next;
+        pembanding = akhirpembanding;
+
+        for (int j = 0; j < jumlahbunga; j++) {
             if (bunga->tinggi < pembanding->tinggi) {
-                kiri = 1;
-                break;
+                if (pembanding->urutan < bunga->urutan) kiri = 1;
+                if (pembanding->urutan > bunga->urutan) kanan = 1;
             }
             pembanding = pembanding->prev;
         }
-        pembanding = bunga->next;
-        while (pembanding != NULL) {
-            if (bunga->tinggi < pembanding->tinggi) {
-                kanan = 1;
-                break;
-            }
-            pembanding = pembanding->next;
-        }
+
         if (kiri && kanan) {
-            Hasil *baru = malloc(sizeof *baru);
-            if (baru == NULL) {
-                bersihkan(bungatidakkena);
-                return 1;
-            }
+            struct bungatidakkena *baru = malloc(sizeof *baru);
             baru->urutan = bunga->urutan;
-            baru->prev = akhirhasil;
+            baru->prev = bungatidakkena;
             baru->next = NULL;
-            if (akhirhasil != NULL) akhirhasil->next = baru;
-            else bungatidakkena = baru;
-            akhirhasil = baru;
+            if (bungatidakkena != NULL) bungatidakkena->next = baru;
+            else awalhasil = baru;
+            bungatidakkena = baru;
             Ntidakkena++;
             deletenode(bunga->urutan);
         }
         bunga = berikut;
     }
 
-    if (Ntidakkena == 0) printf("NONE");
+    bungatidakkena = awalhasil;
+    if (bungatidakkena == NULL) printf("NONE");
     else {
-        Hasil *hasil = bungatidakkena;
-        while (hasil != NULL) {
-            printf("%d", hasil->urutan);
-            if (hasil->next != NULL) printf(" ");
-            hasil = hasil->next;
+        for (int i = 0; i < Ntidakkena; i++) {
+            printf("%d", bungatidakkena->urutan);
+            if (bungatidakkena->next != NULL) printf(" ");
+            bungatidakkena = bungatidakkena->next;
         }
     }
     printf("\n");
-    bersihkan(bungatidakkena);
     return 0;
 }
-void deletenode(int urutan) {
-    Bunga *node = awal;
-    while (node != NULL && node->urutan != urutan)
-        node = node->next;
-    if (node == NULL) return;
-    if (node->prev != NULL) node->prev->next = node->next;
-    else awal = node->next;
-    if (node->next != NULL) node->next->prev = node->prev;
-    else akhir = node->prev;
-    free(node);
-}
 
-void bersihkan(Hasil *bungatidakkena) {
-    while (awal != NULL) {
-        Bunga *berikut = awal->next;
-        free(awal);
-        awal = berikut;
-    }
-    akhir = NULL;
-    while (bungatidakkena != NULL) {
-        Hasil *berikut = bungatidakkena->next;
-        free(bungatidakkena);
-        bungatidakkena = berikut;
-    }
+void deletenode(int urutan) {
+    struct bunga *bunga = awalbunga;
+    while (bunga->urutan != urutan) bunga = bunga->next;
+
+    if (bunga->prev != NULL) bunga->prev->next = bunga->next;
+    else awalbunga = bunga->next;
+    if (bunga->next != NULL) bunga->next->prev = bunga->prev;
+    free(bunga);
 }
